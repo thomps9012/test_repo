@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script
+      src="https://code.jquery.com/jquery-3.6.3.slim.min.js"
+      integrity="sha256-ZwqZIVdD3iXNyGHbSYdsmWP//UBokj2FHAxKuSBKDSo="
+      crossorigin="anonymous"
+    ></script>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body id="container">
+    <h1>Test Trip Tracker</h1>
+    <h1 id="trip-tracking" class="hidden">NOT Tracking</span></h1>
+    <form>
+      <label>ID</label>
+      <input type="text" id="user-id" placeholder="3f36af38-d7bb-463e-a962"/>
+      <label>Name</label>
+      <input type="text" id="user-name" placeholder="John Doe"/>
+      <label>Email</label>
+      <input type="email" id="user-email" placeholder="jdoe@email.com"/>
+      <br />
+      <button id="login">Login</button>
+    </form>
+    <h2 id="login-err" class="false"></h2>
+    <h2 id="start-header" class="hidden">
+      Starting Location :
+      <pre id="starting-location"></pre>
+    </h2>
+    <h2 id="tracked-header" class="hidden">
+      Tracked Points : <span id="point-count"></span>
+    </h2>
+    <h2 id="dest-header" class="hidden">
+      Destination :
+      <pre id="destination"></pre>
+    </h2>
+    <br />
+    <button id="start-trip" class="hidden">Begin Trip</button>
+    <button id="conclude-trip" class="hidden">Conclude Trip</button>
+    <br />
+    <h1 id="trip-report-header" class="hidden">
+      Trip Report
+    </h1>
+    <h3 id="trip-points-header" class="hidden">
+      Trip Points
+      <pre id="trip-api-body"></pre>
+    </h3>
+    <h2 id="calc-dist-header" class="hidden">
+      Calculated Distance : <span id="calc-dist"></span>
+    </h2>
+    <h2 id="actual-dist-header" class="hidden">
+      Actual Distance : <span id="actual-dist"></span>
+    </h2>
+    <h2 id="trip-variance-header" class="hidden">Mileage Variance : <span id="trip-variance"></span></h2>
+    <br />
+    <button id="confirm-trip" class="hidden">Confirm Trip</button>
+  </body>
+  <script src="index.js"></script>
+</html>
