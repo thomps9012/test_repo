@@ -1,4 +1,5 @@
-const graphql_endpoint = "https://feature-testing-sr3vwdfovq-uc.a.run.app/graphql";
+const graphql_endpoint =
+  "https://feature-testing-sr3vwdfovq-uc.a.run.app/graphql";
 const api_body = {
   starting_point: null,
   destination: null,
@@ -7,6 +8,7 @@ const api_body = {
 let points = 0;
 let tracker;
 window.onload = () => {
+  localStorage.clear();
   indexedDB.deleteDatabase("mileage_tracking");
   const indexed_db = indexedDB.open("mileage_tracking", 1);
   let db;
