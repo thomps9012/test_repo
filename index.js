@@ -7,6 +7,7 @@ const api_body = {
 };
 let points = 0;
 let tracker;
+
 window.onload = () => {
   localStorage.clear();
   indexedDB.deleteDatabase("mileage_tracking");
@@ -28,6 +29,7 @@ window.onload = () => {
     console.log(e.target);
   };
 };
+
 const openStore = (store_name) =>
   new Promise((resolve, reject) => {
     const request = indexedDB.open("mileage_tracking");
@@ -43,6 +45,7 @@ const openStore = (store_name) =>
       reject(event.target.result);
     };
   });
+
 const track_points = async () => {
   points++;
   $("#point-count").text(points);
@@ -56,14 +59,18 @@ const track_points = async () => {
     store.add(location);
   });
 };
-$("#login").click(async (e) => {
-  e.preventDefault();
-  localStorage.clear();
+const successfulLogin = () => {
+  $("form").attr("class", "hidden");
+  $("#login").attr("class", "hidden");
+  $("#start-trip").attr("class", "shown");
+  $("#trip-tracking").attr("class", "false");
+  $("#login-err").attr("class", "hidden");
+};
+const loginHandler = async () => {
   const id = $("#user-id").val();
-  console.log(id);
   const name = $("#user-name").val();
   const email = $("#user-email").val();
-  const login_res = await fetch(graphql_endpoint, {
+  const res = await fetch(graphql_endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -73,25 +80,32 @@ $("#login").click(async (e) => {
       variables: { id: id, email: email, name: name },
     }),
   }).then((res) => res.json());
-  console.log(login_res);
+  return res;
+};
+
+$("#login").click(async (e) => {
+  e.preventDefault();
+  localStorage.clear();
+  const login_res = await loginHandler();
   if (!login_res.errors) {
     const auth_jwt = login_res.data.login;
     localStorage.setItem("Authorization", auth_jwt);
-    $("form").attr("class", "hidden");
-    $("#login").attr("class", "hidden");
-    $("#start-trip").attr("class", "shown");
-    $("#trip-tracking").attr("class", "false");
-    $("#login-err").attr("class", "hidden");
+    successfulLogin();
   } else {
     $("#login-err").text("Incorrect Credentials");
   }
 });
-$("#start-trip").click((e) => {
-  e.preventDefault();
+
+const initialHeaderHandler = () => {
   $("#conclude-trip").attr("class", "shown");
   $("#start-header").attr("class", "shown");
   $("#trip-tracking").attr("class", "true").text("TRACKING");
   $("#start-trip").attr("class", "hidden");
+};
+
+$("#start-trip").click((e) => {
+  e.preventDefault();
+  initialHeaderHandler();
   points = 0;
   if ("geolocation" in navigator) {
     if (!tracker) {
@@ -105,16 +119,72 @@ $("#start-trip").click((e) => {
         $("#starting-location").attr("class", "shown-pre");
         $("#starting-location").text(JSON.stringify(location, null, " "));
       });
-      tracker = setInterval(track_points, 3000);
+      tracker = setInterval(track_points, 1000 * 10);
     }
   }
 });
-$("#conclude-trip").click(async (e) => {
-  e.preventDefault();
+
+const concludeTrip = () => {
   $("#conclude-trip").attr("class", "hidden");
   $("#confirm-trip").attr("class", "shown");
   $("#dest-header").attr("class", "shown");
   $("#trip-tracking").attr("class", "false").text("NOT Tracking");
+};
+
+const handleStartingPoint = async () => {
+  const store2 = await openStore("starting_point");
+  const starting_point = store2.getAll();
+  starting_point.onsuccess = () => {
+    console.log("starting_point result", starting_point.result);
+    api_body.location_points.push(...starting_point.result);
+    api_body.starting_point = starting_point.result[0];
+  };
+};
+
+const handleLocationPoints = async () => {
+  const store3 = await openStore("location_points");
+  const location_points = store3.getAll();
+  location_points.onsuccess = async () => {
+    api_body.location_points.push(...location_points.result);
+  };
+};
+
+const showTripHeaders = () => {
+  $("#trip-points-header").attr("class", "shown");
+  $("#trip-api-body").attr("class", "shown-pre");
+  $("#destination").attr("class", "shown-pre");
+  $("#trip-report-header").attr("class", "shown");
+  $("#calc-dist-header").attr("class", "shown");
+  $("#actual-dist-header").attr("class", "shown");
+  $("#trip-variance-header").attr("class", "shown");
+};
+
+const fetchMatrixRes = async () => {
+  const jwt_key = localStorage.getItem("Authorization");
+  const api_res = await fetch(graphql_endpoint, {
+    headers: {
+      Authorization: jwt_key,
+      "Content-Type": "application/json",
+    },
+    method: "POST",
+    body: JSON.stringify({
+      query:
+        "query MileageVariance($starting_point: location_point_input!, $destination: location_point_input!, $location_points:  [location_point_input]!){\n\tmileage_request_variance(starting_point: $starting_point, ending_point: $destination, location_points: $location_points) {\n\t\tmatrix_distance\n\t\tvariance\n\t\ttraveled_distance\n\t}\n}",
+      operationName: "MileageVariance",
+      variables: api_body,
+    }),
+  }).then((res) => res.json());
+  console.log("graphql endpoint", api_res);
+  const { matrix_distance, traveled_distance, variance } =
+    api_res.data.mileage_request_variance;
+  $("#calc-dist").text(matrix_distance);
+  $("#actual-dist").text(parseFloat(traveled_distance).toFixed(2));
+  $("#trip-variance").text(variance);
+};
+
+$("#conclude-trip").click(async (e) => {
+  e.preventDefault();
+  concludeTrip();
   clearInterval(tracker);
   tracker = null;
   $("#point-count").text(points + 1);
@@ -123,50 +193,14 @@ $("#conclude-trip").click(async (e) => {
       latitude: coords.latitude,
       longitude: coords.longitude,
     };
-    const store2 = await openStore("starting_point");
-    const starting_point = store2.getAll();
-    starting_point.onsuccess = () => {
-      console.log("starting_point result", starting_point.result);
-      api_body.location_points.push(...starting_point.result);
-      api_body.starting_point = starting_point.result[0];
-    };
-    const store3 = await openStore("location_points");
-    const location_points = store3.getAll();
-    location_points.onsuccess = async () => {
-      api_body.location_points.push(...location_points.result);
-      console.log("location_points result", location_points.result);
-      api_body.location_points.push(destination);
-      api_body.destination = destination;
-      $("#trip-points-header").attr("class", "shown");
-      $("#trip-api-body").attr("class", "shown-pre");
-      $("#trip-api-body").text(JSON.stringify(api_body, null, " "));
-      $("#destination").attr("class", "shown-pre");
-      $("#destination").text(JSON.stringify(destination, null, " "));
-      $("#trip-report-header").attr("class", "shown");
-      $("#calc-dist-header").attr("class", "shown");
-      $("#actual-dist-header").attr("class", "shown");
-      $("#trip-variance-header").attr("class", "shown");
-      const jwt_key = localStorage.getItem("Authorization");
-      const api_res = await fetch(graphql_endpoint, {
-        headers: {
-          Authorization: jwt_key,
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-        body: JSON.stringify({
-          query:
-            "query MileageVariance($starting_point: location_point_input!, $destination: location_point_input!, $location_points:  [location_point_input]!){\n\tmileage_request_variance(starting_point: $starting_point, ending_point: $destination, location_points: $location_points) {\n\t\tmatrix_distance\n\t\tvariance\n\t\ttraveled_distance\n\t}\n}",
-          operationName: "MileageVariance",
-          variables: api_body,
-        }),
-      }).then((res) => res.json());
-      console.log("graphql endpoint", api_res);
-      const { matrix_distance, traveled_distance, variance } =
-        api_res.data.mileage_request_variance;
-      $("#calc-dist").text(matrix_distance);
-      $("#actual-dist").text(parseFloat(traveled_distance).toFixed(2));
-      $("#trip-variance").text(variance);
-    };
+    await handleStartingPoint();
+    await handleLocationPoints();
+    api_body.location_points.push(destination);
+    api_body.destination = destination;
+    showTripHeaders();
+    $("#trip-api-body").text(JSON.stringify(api_body, null, " "));
+    $("#destination").text(JSON.stringify(destination, null, " "));
+    await fetchMatrixRes();
   });
 });
 
