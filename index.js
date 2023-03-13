@@ -8,55 +8,58 @@ const api_body = {
 let points = 0;
 let tracker;
 
-window.onload = () => {
-  localStorage.clear();
-  indexedDB.deleteDatabase("mileage_tracking");
-  const indexed_db = indexedDB.open("mileage_tracking", 1);
-  let db;
-  indexed_db.onupgradeneeded = (e) => {
-    db = e.target.result;
-    db.createObjectStore("starting_point", { autoIncrement: true });
-    db.createObjectStore("location_points", { autoIncrement: true });
-    db.createObjectStore("destination", { autoIncrement: true });
-    console.log("on upgrade needed: ", db);
-  };
-  indexed_db.onsuccess = (e) => {
-    db = e.target.result;
-    console.log("on success: ", db);
-  };
-  indexed_db.onerror = (e) => {
-    console.log("error");
-    console.log(e.target);
-  };
-};
+// window.onload = () => {
+//   localStorage.clear();
+//   indexedDB.deleteDatabase("mileage_tracking");
+//   const indexed_db = indexedDB.open("mileage_tracking", 1);
+//   let db;
+//   indexed_db.onupgradeneeded = (e) => {
+//     db = e.target.result;
+//     db.createObjectStore("starting_point", { autoIncrement: true });
+//     db.createObjectStore("location_points", { autoIncrement: true });
+//     db.createObjectStore("destination", { autoIncrement: true });
+//     console.log("on upgrade needed: ", db);
+//   };
+//   indexed_db.onsuccess = (e) => {
+//     db = e.target.result;
+//     console.log("on success: ", db);
+//   };
+//   indexed_db.onerror = (e) => {
+//     console.log("error");
+//     console.log(e.target);
+//   };
+// };
 
-const openStore = (store_name) =>
-  new Promise((resolve, reject) => {
-    const request = indexedDB.open("mileage_tracking");
-    request.onsuccess = (e) => {
-      console.log(e.target.result);
-      const db = e.target.result;
-      const transaction = db.transaction([store_name], "readwrite");
-      const store = transaction.objectStore(store_name);
-      resolve(store);
-    };
-    request.onerror = function (event) {
-      console.log("Woops! " + event.target.errorCode);
-      reject(event.target.result);
-    };
-  });
+// const openStore = (store_name) =>
+//   new Promise((resolve, reject) => {
+//     const request = indexedDB.open("mileage_tracking");
+//     request.onsuccess = (e) => {
+//       console.log(e.target.result);
+//       const db = e.target.result;
+//       const transaction = db.transaction([store_name], "readwrite");
+//       const store = transaction.objectStore(store_name);
+//       resolve(store);
+//     };
+//     request.onerror = function (event) {
+//       console.log("Woops! " + event.target.errorCode);
+//       reject(event.target.result);
+//     };
+//   });
 
 const track_points = async () => {
   points++;
   $("#point-count").text(points);
   $("#tracked-header").attr("class", "shown");
   navigator.geolocation.getCurrentPosition(async ({ coords }) => {
-    const store = await openStore("location_points");
+    // const store = await openStore("location_points");
+    const current_points = JSON.parse(localStorage.getItem("location_points"))
     const location = {
       latitude: coords.latitude,
       longitude: coords.longitude,
     };
-    store.add(location);
+    const new_points = current_points.push(location)
+    // store.add(location);
+    localStorage.setItem("location_points", JSON.stringify(new_points))
   });
 };
 const successfulLogin = () => {
@@ -110,12 +113,14 @@ $("#start-trip").click((e) => {
   if ("geolocation" in navigator) {
     if (!tracker) {
       navigator.geolocation.getCurrentPosition(async ({ coords }) => {
-        const store = await openStore("starting_point");
+        // const store = await openStore("starting_point");
         const location = {
           latitude: coords.latitude,
           longitude: coords.longitude,
         };
-        store.add(location);
+        // store.add(location);
+        localStorage.setItem("starting_point", JSON.stringify(location));
+        localStorage.setItem("location_points", JSON.stringify([location]))
         $("#starting-location").attr("class", "shown-pre");
         $("#starting-location").text(JSON.stringify(location, null, " "));
       });
@@ -132,21 +137,25 @@ const concludeTrip = () => {
 };
 
 const handleStartingPoint = async () => {
-  const store2 = await openStore("starting_point");
-  const starting_point = store2.getAll();
-  starting_point.onsuccess = () => {
-    console.log("starting_point result", starting_point.result);
-    api_body.location_points.push(...starting_point.result);
-    api_body.starting_point = starting_point.result[0];
-  };
+  const starting_point = JSON.parse(localStorage.getItem("starting_point"));
+  return starting_point;
+  // const store2 = await openStore("starting_point");
+  // const starting_point = store2.getAll();
+  // starting_point.onsuccess = () => {
+  //   console.log("starting_point result", starting_point.result);
+  //   api_body.location_points.push(...starting_point.result);
+  //   api_body.starting_point = starting_point.result[0];
+  // };
 };
 
 const handleLocationPoints = async () => {
-  const store3 = await openStore("location_points");
-  const location_points = store3.getAll();
-  location_points.onsuccess = async () => {
-    api_body.location_points.push(...location_points.result);
-  };
+  const location_points = JSON.parse(localStorage.getItem("location_points"));
+  // const store3 = await openStore("location_points");
+  // const location_points = store3.getAll();
+  // location_points.onsuccess = async () => {
+  //   api_body.location_points.push(...location_points.result);
+  // };
+  return location_points;
 };
 
 const showTripHeaders = () => {
@@ -193,11 +202,13 @@ $("#conclude-trip").click(async (e) => {
       latitude: coords.latitude,
       longitude: coords.longitude,
     };
-    await handleStartingPoint();
-    await handleLocationPoints();
-    api_body.location_points.push(destination);
+    const starting_point = await handleStartingPoint();
+    const location_points = await handleLocationPoints();
+    api_body.starting_point = starting_point;
+    api_body.location_points = location_points;
     api_body.destination = destination;
     showTripHeaders();
+    $("#starting-location").text(JSON.stringify(starting_point, null, " "));
     $("#trip-api-body").text(JSON.stringify(api_body, null, " "));
     $("#destination").text(JSON.stringify(destination, null, " "));
     await fetchMatrixRes();
