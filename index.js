@@ -52,14 +52,16 @@ const track_points = async () => {
   $("#tracked-header").attr("class", "shown");
   navigator.geolocation.getCurrentPosition(async ({ coords }) => {
     // const store = await openStore("location_points");
-    const current_points = JSON.parse(localStorage.getItem("location_points"))
+    const current_points = JSON.parse(localStorage.getItem("location_points"));
     const location = {
       latitude: coords.latitude,
       longitude: coords.longitude,
     };
-    const new_points = current_points.push(location)
+    console.log(current_points)
+    current_points.push(location);
+    console.log(current_points)
     // store.add(location);
-    localStorage.setItem("location_points", JSON.stringify(new_points))
+    localStorage.setItem("location_points", JSON.stringify(current_points));
   });
 };
 const successfulLogin = () => {
@@ -120,7 +122,7 @@ $("#start-trip").click((e) => {
         };
         // store.add(location);
         localStorage.setItem("starting_point", JSON.stringify(location));
-        localStorage.setItem("location_points", JSON.stringify([location]))
+        localStorage.setItem("location_points", JSON.stringify([location]));
         $("#starting-location").attr("class", "shown-pre");
         $("#starting-location").text(JSON.stringify(location, null, " "));
       });
