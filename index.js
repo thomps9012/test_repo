@@ -41,7 +41,7 @@ const loginHandler = async () => {
       query:
         "mutation login($id: String!, $email: String!, $name: String!) {\n\tlogin(id: $id, email: $email, name: $name) \n}\n",
       operationName: "login",
-      variables: { id: id, email: email, name: name },
+      variables: { id, email, name },
     }),
   };
   const res = await fetch(graphql_endpoint, login_options)
@@ -204,8 +204,6 @@ $("#conclude-trip").click(async (e) => {
   });
 });
 
-// update to test entering data in endpoint
-
 $("#confirm-trip").click(async () => {
   hideTripHeaders();
   showTripResponseHeaders();
@@ -216,13 +214,32 @@ $("#confirm-trip").click(async () => {
   const mileage_variance = await handleMileageVariance();
   const parking = parseFloat((Math.random() * 20).toFixed(2));
   const tolls = parseFloat((Math.random() * 20).toFixed(2));
+  const request_body = {
+    grant_id: "SOR_HOUSING",
+    request: {
+      category: "MENS_HOUSE",
+      date: new Date().toISOString(),
+      destination: destination,
+      starting_location: starting_point,
+      location_points,
+      parking,
+      tolls,
+      trip_purpose: "to move from point a to point b",
+      request_variance: mileage_variance,
+    },
+  };
   const options = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: jwt_key,
     },
-    body: `{"query":"mutation createTestMileage($grant_id: ID!, $request: test_mileage_input!){\n\ttest_create_mileage(grant_id: $grant_id, request: $request){\n\t\tid\n\t\tcurrent_status\n\t\tcreated_at\n\t\tcurrent_user\n\t\tstarting_location {\n\t\t\tlatitude\n\t\t\tlongitude\n\t\t}\n\t\tdestination {\n\t\t\tlatitude\n\t\t\tlongitude\n\t\t}\n\t\trequest_variance {\n\t\t\tdifference\n\t\t\tmatrix_distance\n\t\t\tvariance\n\t\t\ttraveled_distance\n\t\t}\n\t\tlocation_points {\n\t\t\tlatitude\n\t\t\tlongitude\n\t\t}\n\t\taction_history {\n\t\t\tid\n\t\t\tuser\n\t\t\tstatus\n\t\t\tcreated_at\n\t\t}\n\t}\n}","operationName":"createTestMileage","variables":{"grant_id":"SOR_HOUSING","request":{"category":"MENS_HOUSE","date":${new Date().toISOString()},"destination":${destination},"starting_location":${starting_point},"location_points":${location_points},"parking":${parking},"tolls":${tolls},"trip_purpose":"to move from point a to point b","request_variance":${mileage_variance}}}}`,
+    body: JSON.stringify({
+      query:
+        "mutation createTestMileage($grant_id: ID!, $request: test_mileage_input!){\n\ttest_create_mileage(grant_id: $grant_id, request: $request){\n\t\tid\n\t\tcurrent_status\n\t\tcreated_at\n\t\tcurrent_user\n\t\tstarting_location {\n\t\t\tlatitude\n\t\t\tlongitude\n\t\t}\n\t\tdestination {\n\t\t\tlatitude\n\t\t\tlongitude\n\t\t}\n\t\trequest_variance {\n\t\t\tdifference\n\t\t\tmatrix_distance\n\t\t\tvariance\n\t\t\ttraveled_distance\n\t\t}\n\t\tlocation_points {\n\t\t\tlatitude\n\t\t\tlongitude\n\t\t}\n\t\taction_history {\n\t\t\tid\n\t\t\tuser\n\t\t\tstatus\n\t\t\tcreated_at\n\t\t}\n\t}\n}",
+      operationName: "createTestMileage",
+      variables: request_body,
+    }),
   };
   const mileage_create_res = await fetch(
     "https://feature-testing-sr3vwdfovq-uc.a.run.app/graphql",
