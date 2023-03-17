@@ -138,6 +138,9 @@ const hideTripHeaders = () => {
   $("#actual-dist-header").attr("class", "hidden");
   $("#trip-variance-header").attr("class", "hidden");
   $("#confirm-trip").attr("class", "hidden");
+  $("#dest-header").attr("class", "hidden");
+  $("#tracked-header").attr("class", "hidden");
+  $("#start-header").attr("class", "hidden");
 };
 
 const showTripResponseHeaders = () => {
@@ -248,7 +251,7 @@ $("#confirm-trip").click(async () => {
     .then((response) => response.json())
     .catch((err) => console.error(err));
   $("#trip-request-response").text(
-    JSON.stringify(mileage_create_res, null, " ")
+    JSON.stringify(mileage_create_res.data.test_create_mileage, null, " ")
   );
 });
 
