@@ -5,40 +5,37 @@
 }
 #container {
   width: auto;
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
   flex-wrap: wrap;
   justify-content: center;
   padding: 5ch;
 }
 h1 {
-  text-align: left;
+  text-align: center;
   font-size: 50px;
 }
-.shown-pre {
+.pre {
   white-space: pre-wrap;
-  padding: 20px;
+  padding: 5px;
   background-color: darkslategray;
   color: aliceblue;
   border: 2px dashed aliceblue;
   tab-size: 4;
   font-weight: 400;
   border-radius: 5px;
+  font-size: 15px;
+  display: flex;
   flex-wrap: wrap;
   overflow: auto;
   overflow-wrap: break-word;
-}
-
-#trip-api-body {
-    max-height: 25ch;
-  overflow: scroll;
 }
 
 button {
   background-color: darkslategray;
   color: aliceblue;
   font-size: x-large;
-  width: 300px;
+  width: 100%;
   height: 75px;
   border: 3px solid aliceblue;
   border-radius: 5px;
@@ -46,31 +43,6 @@ button {
 
 .hidden {
   display: none;
-}
-
-.false {
-  color: crimson;
-  text-decoration: overline;
-}
-.true {
-  color: seagreen;
-  animation: 2s linear 0s infinite alternate flash;
-  text-shadow: 1px 1px 2px aliceblue;
-}
-#conclude-trip,
-#login,
-#begin-trip,
-#confirm-trip {
-  animation: 2s linear 0s infinite alternate flash;
-}
-
-@keyframes flash {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 form {
@@ -84,16 +56,13 @@ label {
   opacity: 75%;
 }
 
-form input {
+form input,
+form textarea {
   margin-bottom: 20px;
   padding: 10px;
   font-size: large;
   border-radius: 5px;
 }
-#login {
-  width: 100%;
-}
-
-#trip-report-header {
-  text-decoration: underline;
+form textarea {
+  height: 150px;
 }
