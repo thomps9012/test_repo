@@ -182,6 +182,9 @@ export default function Home() {
           Begin Trip
         </button>
       </form>
+      {logged_in && tracking && (
+        <button onClick={concludeTrip}>Force Conclude</button>
+      )}
       <pre>{request_response}</pre>
       <button
         id="confirm-request"
