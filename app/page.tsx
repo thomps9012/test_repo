@@ -79,7 +79,10 @@ export default function Home() {
   const concludeTrip = async () => {
     const auth_token = localStorage.getItem("auth_token");
     const tracked_points = JSON.parse(
-      localStorage.getItem("tracked_points") as string
+      document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("tracked_points="))
+        ?.split("=")[1] as string
     );
     const response = await fetch("/end_trip", {
       method: "POST",
