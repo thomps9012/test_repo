@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 interface TrackedPoint {
   latitude: number;
@@ -20,11 +20,7 @@ export default function Home() {
   });
   const tracker_id = useRef<NodeJS.Timer | null | number>(null);
   const [request_response, setRequestResponse] = useState("");
-  useEffect(() => {
-    resetBrowser();
-  }, []);
   const resetBrowser = () => {
-    console.log("hit");
     setTracking(false);
     setPassword("");
     setLoggedIn(false);
@@ -44,13 +40,16 @@ export default function Home() {
       method: "POST",
       body: JSON.stringify({ password: password }),
     }).then((res) => res.json());
-    if (response.token != "") {
+    if (
+      response.data != "null" &&
+      response.message != "Incorrect Login Credentials"
+    ) {
       setLoggedIn(true);
       setPassword("");
       setRequestResponse("");
       localStorage.setItem("auth_token", response.token);
     } else {
-      setRequestResponse(JSON.stringify(response, null, 2));
+      setRequestResponse(JSON.stringify(response.message, null, 2));
     }
   };
   const handleTripChange = (e: any) => {
@@ -102,14 +101,17 @@ export default function Home() {
   const track_points = async () => {
     navigator.geolocation.getCurrentPosition(async ({ coords }) => {
       const tracked_points = JSON.parse(
-        localStorage.getItem("tracked_points") as string
+        document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("tracked_points="))
+          ?.split("=")[1] as string
       );
       const location = {
         latitude: coords.latitude,
         longitude: coords.longitude,
       };
       const new_state = [...tracked_points, location];
-      localStorage.setItem("tracked_points", JSON.stringify(new_state));
+      document.cookie = `tracked_points=${JSON.stringify(new_state)};`;
       const distance_to_destination = haverDistance(
         destination_coords,
         location
@@ -125,7 +127,14 @@ export default function Home() {
       method: "POST",
       body: JSON.stringify({ address: trip_info.destination }),
     }).then((res) => res.json());
-    localStorage.setItem("tracked_points", JSON.stringify([]));
+
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      const location = {
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+      };
+      document.cookie = `tracked_points=${JSON.stringify([location])};`;
+    });
     if (response.target) {
       setDestinationCoords(response.target);
       tracker_id.current = setInterval(track_points, 5 * 1000);
@@ -185,6 +194,9 @@ export default function Home() {
           Begin Trip
         </button>
       </form>
+      {logged_in && tracking && (
+        <button onClick={concludeTrip}>Force Conclude</button>
+      )}
       <pre>{request_response}</pre>
       <button
         id="confirm-request"
@@ -195,6 +207,7 @@ export default function Home() {
       >
         Confirm Request
       </button>
+      <button onClick={resetBrowser}>Browser Reset</button>
     </main>
   );
 }
